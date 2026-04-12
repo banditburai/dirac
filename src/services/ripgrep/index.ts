@@ -61,7 +61,7 @@ interface FileSearchResult {
 	lines: SearchResultLine[]
 }
 
-const MAX_RESULTS = 300
+const MAX_RESULTS = 30
 
 async function execRipgrep(args: string[]): Promise<string> {
 	const binPath: string = await getBinaryLocation("rg")
@@ -177,9 +177,9 @@ export async function regexSearchFiles(
 	return await formatResults(fileResults, finalMatchCount, cwd, taskId)
 }
 
-const MAX_RIPGREP_MB = 0.25
+const MAX_RIPGREP_MB = 0.1
 const MAX_BYTE_SIZE = MAX_RIPGREP_MB * 1024 * 1024 // 0.25MB in bytes
-const MAX_LINE_LENGTH = 500
+const MAX_LINE_LENGTH = 300
 
 async function formatResults(results: FileSearchResult[], matchCount: number, cwd: string, taskId?: string): Promise<string> {
 	let output = ""

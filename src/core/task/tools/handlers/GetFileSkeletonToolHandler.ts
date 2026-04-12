@@ -97,7 +97,7 @@ export class GetFileSkeletonToolHandler implements IFullyManagedTool {
 			const errorMessage = error instanceof Error ? error.message : String(error)
 			return formatResponse.toolError(`Error extracting skeleton: ${errorMessage}`)
 		}
-		const result = skeletons.map((s) => `--- ${s.path} ---\n${s.content}`).join("\n\n")
+		const result = skeletons.map((s) => `--- ${s.path} ---\nStable Anchors are provided with each line.\n ${s.content}`).join("\n\n")
 
 		if (
 			skeletons.some(

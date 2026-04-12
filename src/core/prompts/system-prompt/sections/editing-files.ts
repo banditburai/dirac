@@ -4,9 +4,14 @@ export const getEditingFilesInstructions = () => {
 	const delimiter = getDelimiter()
 	return `## EDITING FILES INSTRUCTIONS
 
-You have 3 file editing tools: \`write_to_file\` (for new files or complete overwrites), \`edit_file\` (for targeted edits) and \`replace_symbol\` (for direct AST manipulation such as replacing a function or a symbol). 
+You have 4 file editing tools: 
 
-\`replace_symbol\` has the lowest likelihood of errors since it updates the AST directly. Prefer it if the functions you want to replace are not too large. 
+1. \`write_to_file\` (for new files or complete overwrites) 
+2. \`edit_file\` (for targeted edits) 
+3. \`replace_symbol\` (for direct AST manipulation such as replacing a function or a symbol). updates AST precisely.
+4. \`execute_command\` with commands like grep/awk/sed/find etc for bulk updates. CHEAPEST to execute and very useful for updating files in bulk. You can update the files without necessarily loading them in the context window
+
+
 
 ### LINE-HASH PROTOCOL
 Every line returned by read tools (read_file, get_function, get_file_skeleton, search_files) follows the format: ANCHOR${delimiter}CONTENT
@@ -39,47 +44,6 @@ The \`edit_file\` tool supports three operations via the \`edit_type\` parameter
 - \`insert_before\`: Inserts \`text\` as new line(s) immediately before \`anchor\`.
 
 ### EXAMPLES
-
-#### Multi-Line Block Replacement
-When replacing a block of code with a new multi-line block, you must provide all newlines (\`\\n\`) and exact indentations within the \`text\` parameter.
-
-Original Code:
-\`\`\`
-Apple${delimiter}    def fetch_data(url):
-Brave${delimiter}        res = requests.get(url)
-Cider${delimiter}        if res.status_code == 200:
-Delta${delimiter}            return res.json()
-Eagle${delimiter}        return None
-\`\`\`
-
-Invoke \`edit_file\` with:
-\`\`\`json
-{
-  "edit_type": "replace",
-  "anchor": "Brave${delimiter}        res = requests.get(url)",
-  "end_anchor": "Eagle${delimiter}        return None",
-  "text": "        try:\\n            res = requests.get(url, timeout=5)\\n            res.raise_for_status()\\n            return res.json()\\n        except requests.RequestException:\\n            return None"
-}
-\`\`\`
-*(Note: The \`text\` parameter explicitly includes the 8-space and 12-space indentations required for the new Python code, separated by \`\\n\`.)*
-
-#### Single-Line Delete
-To delete a specific line cleanly, match the anchor and end_anchor, and pass an empty string.
-
-Original Code:
-\`\`\`
-Apple${delimiter}        print("debug")
-\`\`\`
-
-Invoke \`edit_file\` with:
-\`\`\`json
-{
-  "edit_type": "replace",
-  "anchor": "Apple${delimiter}        print(\\"debug\\")",
-  "end_anchor": "Apple${delimiter}        print(\\"debug\\")",
-  "text": ""
-}
-\`\`\`
 
 #### Batched Multi-File Edit
 To add imports, simplify logic, or refactor across multiple files, use the \`files\` parameter. 

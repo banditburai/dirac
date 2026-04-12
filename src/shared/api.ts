@@ -634,7 +634,7 @@ export const vertexModels = {
 		outputPrice: 3.0,
 		cacheReadsPrice: 0.05,
 		cacheWritesPrice: 0.0,
-		temperature: 1.0,
+		temperature: 0.2,
 		supportsReasoning: true,
 		thinkingConfig: {
 			geminiThinkingLevel: "high",
@@ -892,6 +892,7 @@ export const geminiModels = {
 		outputPrice: 3.0,
 		cacheReadsPrice: 0.05,
 		cacheWritesPrice: 0.0,
+		temperature: 0.2,
 		supportsReasoning: true,
 		thinkingConfig: {
 			geminiThinkingLevel: "low",

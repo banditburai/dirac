@@ -7,7 +7,7 @@ export const get_function: DiracToolSpec = {
 	id,
 	name: "get_function",
 	description:
-		"Extracts the complete implementation of one or more functions or methods from one or more files. Use this to inspect specific functions' logic without reading the entire files. You can specify multiple files and multiple functions, it will return an all to all lookup result.",
+		"Extracts the complete implementation of one or more functions or methods from one or more files. Use this to inspect specific functions' logic without reading the entire files. You can specify multiple files and multiple functions, it will return an all to all lookup result. Use dot-separated path to the function.",
 	parameters: [
 		{
 			name: "paths",
@@ -23,7 +23,7 @@ export const get_function: DiracToolSpec = {
 			type: "array",
 			items: { type: "string" },
 			instruction: "Exact names of the functions or methods to extract.",
-			usage: '["calculateSum", "findMax"]',
+			usage: '["Foo.calculateSum", "Bar.findMax"]',
 		},
 	],
 }

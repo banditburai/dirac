@@ -132,36 +132,37 @@ export class ASTAnchorBridge {
 
 			if (nameCapture && defCapture) {
 				const nameText = fileContent.slice(nameCapture.node.startIndex, nameCapture.node.endIndex)
+
+				// Calculate full name by walking up the tree
+				let fullName = nameText
+				let currentNode = defCapture.node
+				const seenMatches = new Set<any>([match])
+				while (currentNode.parent) {
+					currentNode = currentNode.parent
+					const parentMatch = nodeToMatch.get(currentNode.id)
+					if (parentMatch && !seenMatches.has(parentMatch)) {
+						const parentNameCap = parentMatch.captures.find((c: any) => c.name.startsWith("name."))
+						if (parentNameCap) {
+							const parentNameText = fileContent.slice(
+								parentNameCap.node.startIndex,
+								parentNameCap.node.endIndex,
+							)
+							fullName = `${parentNameText}.${fullName}`
+							seenMatches.add(parentMatch)
+						}
+					}
+				}
+
+				const normalizedFullName = fullName.replace(/::/g, ".")
 				const matchedReqNames = functionNames.filter((reqName) => {
-					const normalizedNameText = nameText.replace(/::/g, ".")
 					const normalizedReqName = reqName.replace(/::/g, ".")
-					if (normalizedReqName === normalizedNameText) return true
-					if (normalizedNameText.endsWith("." + normalizedReqName)) return true
-					if (normalizedReqName.endsWith("." + normalizedNameText)) return true
+					if (normalizedFullName === normalizedReqName) return true
+					if (normalizedFullName.endsWith("." + normalizedReqName)) return true
 					return false
 				})
 
 				if (matchedReqNames.length > 0) {
 					matchedReqNames.forEach((reqName) => foundNamesInFile.add(reqName))
-
-					let fullName = nameText
-					let currentNode = defCapture.node
-					const seenMatches = new Set<any>([match])
-					while (currentNode.parent) {
-						currentNode = currentNode.parent
-						const parentMatch = nodeToMatch.get(currentNode.id)
-						if (parentMatch && !seenMatches.has(parentMatch)) {
-							const parentNameCap = parentMatch.captures.find((c: any) => c.name.startsWith("name."))
-							if (parentNameCap) {
-								const parentNameText = fileContent.slice(
-									parentNameCap.node.startIndex,
-									parentNameCap.node.endIndex,
-								)
-								fullName = `${parentNameText}.${fullName}`
-								seenMatches.add(parentMatch)
-							}
-						}
-					}
 
 					const { startIndex, endIndex, startLine } = ASTAnchorBridge.getExtendedRange(defCapture.node, fileContent)
 					
@@ -185,7 +186,7 @@ export class ASTAnchorBridge {
 
 					const formatted = defLines.map((line, i) => formatLineWithHash(line, defAnchors[i])).join("\n")
 					const funcHash = contentHash(defText)
-					fileResults.push(`${relPath}::${nameText}\n[Function Hash: ${funcHash}]\n${context}${formatted}`)
+					fileResults.push(`${relPath}::${fullName}\n[Function Hash: ${funcHash}]\nAll Hash Anchors provided below are stable and can be used with edit_file directly.\n${context}${formatted}`)
 				}
 			}
 		}

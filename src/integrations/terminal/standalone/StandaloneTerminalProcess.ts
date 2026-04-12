@@ -9,6 +9,7 @@
  */
 
 import { telemetryService } from "@services/telemetry"
+import { detectBestShell, getShellArgs, ShellInfo } from "@/utils/shell-detection"
 import { ChildProcess, spawn } from "child_process"
 import { EventEmitter } from "events"
 import { terminateProcessTree } from "@/utils/process-termination"
@@ -19,7 +20,6 @@ import {
 	MAX_UNRETRIEVED_LINES,
 	PROCESS_HOT_TIMEOUT_COMPILING,
 	PROCESS_HOT_TIMEOUT_NORMAL,
-	TRUNCATE_KEEP_LINES,
 } from "../constants"
 import type { ITerminal, ITerminalProcess, TerminalCompletionDetails, TerminalProcessEvents } from "../types"
 
@@ -70,6 +70,9 @@ export class StandaloneTerminalProcess extends EventEmitter<TerminalProcessEvent
 	/** Whether the process has completed */
 	private isCompleted = false
 
+	/** Detected shell info */
+	private shellInfo: ShellInfo = detectBestShell()
+
 	constructor() {
 		super()
 	}
@@ -81,11 +84,11 @@ export class StandaloneTerminalProcess extends EventEmitter<TerminalProcessEvent
 	 */
 	async run(terminal: ITerminal, command: string): Promise<void> {
 		// Get shell and working directory from terminal
-		const shell = (terminal as any)._shellPath || this.getDefaultShell()
+		const shell = (terminal as any)._shellPath || this.shellInfo.path
 		const cwd = (terminal as any)._cwd || process.cwd()
 
 		// Prepare command for execution
-		const shellArgs = this.getShellArgs(shell, command)
+		const shellArgs = getShellArgs(this.shellInfo, command)
 
 		try {
 			// Create shell options
@@ -274,8 +277,8 @@ export class StandaloneTerminalProcess extends EventEmitter<TerminalProcessEvent
 		// Truncate if too many lines to prevent context overflow
 		const lines = unretrieved.split("\n")
 		if (lines.length > MAX_UNRETRIEVED_LINES) {
-			const first = lines.slice(0, TRUNCATE_KEEP_LINES)
-			const last = lines.slice(-TRUNCATE_KEEP_LINES)
+			const first = lines.slice(0, 10) // TRUNCATE_KEEP_LINES is 10
+			const last = lines.slice(-10)
 			const skipped = lines.length - first.length - last.length
 			return this.removeLastLineArtifacts([...first, `\n... (${skipped} lines truncated) ...\n`, ...last].join("\n"))
 		}
@@ -309,10 +312,7 @@ export class StandaloneTerminalProcess extends EventEmitter<TerminalProcessEvent
 	 * @returns The default shell path
 	 */
 	private getDefaultShell(): string {
-		if (process.platform === "win32") {
-			return process.env.COMSPEC || "cmd.exe"
-		}
-		return process.env.SHELL || "/bin/bash"
+		return this.shellInfo.path
 	}
 
 	/**
@@ -322,16 +322,7 @@ export class StandaloneTerminalProcess extends EventEmitter<TerminalProcessEvent
 	 * @returns Array of shell arguments
 	 */
 	private getShellArgs(shell: string, command: string): string[] {
-		if (process.platform === "win32") {
-			if (shell.toLowerCase().includes("powershell") || shell.toLowerCase().includes("pwsh")) {
-				return ["-Command", command]
-			}
-			return ["/c", command]
-		}
-		// Use -l for login shell, -c for command
-		// Use -c for command. We don't use -l (login shell) to prevent profile files
-		// from overwriting the environment variables we pass to spawn.
-		return ["-c", command]
+		return getShellArgs(this.shellInfo, command)
 	}
 
 	/**

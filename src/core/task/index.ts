@@ -29,6 +29,7 @@ import { CommandPermissionController } from "@core/permissions"
 import { formatResponse } from "@core/prompts/responses"
 import type { SystemPromptContext } from "@core/prompts/system-prompt"
 import { getSystemPrompt } from "@core/prompts/system-prompt"
+import { detectBestShell } from "@/utils/shell-detection"
 import { ensureRulesDirectoryExists, ensureTaskDirectoryExists } from "@core/storage/disk"
 import { isMultiRootEnabled } from "@core/workspace/multi-root-utils"
 import { WorkspaceRootManager } from "@core/workspace/WorkspaceRootManager"
@@ -953,6 +954,8 @@ export class Task {
 			visible: visibleTabPaths.slice(0, cap),
 		}
 
+		const shellInfo = detectBestShell()
+
 		const promptContext: SystemPromptContext = {
 			cwd: this.cwd,
 			ide,
@@ -982,6 +985,9 @@ export class Task {
 				this.stateManager.getGlobalStateKey("nativeToolCallEnabled"),
 			enableParallelToolCalling: this.isParallelToolCallingEnabled(),
 			terminalExecutionMode: this.terminalExecutionMode,
+			activeShellType: shellInfo.type,
+			activeShellPath: shellInfo.path,
+			activeShellIsPosix: shellInfo.isPosix,
 		}
 
 		// Notify user if any conditional rules were applied for this request

@@ -1,4 +1,3 @@
-import { setTimeout as setTimeoutPromise } from "node:timers/promises"
 import { ApiHandler } from "@core/api"
 import { getContextWindowInfo } from "@core/context/context-management/context-window-utils"
 import { FileContextTracker } from "@core/context/context-tracking/FileContextTracker"
@@ -7,16 +6,13 @@ import { getEditingFilesInstructions } from "@core/prompts/system-prompt/section
 import { StateManager } from "@core/storage/StateManager"
 import { isMultiRootEnabled } from "@core/workspace/multi-root-utils"
 import { WorkspaceRootManager } from "@core/workspace/WorkspaceRootManager"
-import { HostProvider } from "@hosts/host-provider"
 import { ITerminalManager } from "@integrations/terminal/types"
 import { findLast } from "@shared/array"
 import { combineApiRequests } from "@shared/combineApiRequests"
 import { combineCommandSequences } from "@shared/combineCommandSequences"
 import { DiracMessage } from "@shared/ExtensionMessage"
-import { filterExistingFiles } from "@utils/tabFiltering"
 import type { Dirent } from "fs"
 import fs from "fs/promises"
-import pWaitFor from "p-wait-for"
 import * as path from "path"
 import { MessageStateHandler } from "./message-state"
 import { TaskState } from "./TaskState"
@@ -107,84 +103,10 @@ export class EnvironmentManager {
 	}
 
 	async getEnvironmentDetails(includeFileDetails = false): Promise<string> {
-		const host = await HostProvider.env.getHostVersion({})
 		let details = ""
 
 		// Workspace roots (multi-root)
 		details += this.formatWorkspaceRootsSection()
-
-		// It could be useful for dirac to know if the user went from one or no file to another between messages, so we always include this context
-		details += `\n\n# ${host.platform} Visible Files`
-		const rawVisiblePaths = (await HostProvider.window.getVisibleTabs({})).paths
-		const filteredVisiblePaths = await filterExistingFiles(rawVisiblePaths)
-		const visibleFilePaths = filteredVisiblePaths
-			.map((absolutePath) => path.relative(this.cwd, absolutePath))
-			.filter((relPath) => {
-				const parts = relPath.split(/[/\\]/)
-				const hasDotPart = parts.some((part) => part.startsWith("."))
-				const isLogOrTxt = relPath.toLowerCase().endsWith(".log") || relPath.toLowerCase().endsWith(".txt")
-				return !hasDotPart && !isLogOrTxt
-			})
-
-		for (const filePath of visibleFilePaths) {
-			details += `\n${filePath}`
-		}
-
-		const busyTerminals = this.terminalManager.getTerminals(true)
-		const inactiveTerminals = this.terminalManager.getTerminals(false)
-
-		if (busyTerminals.length > 0 && this.taskState.didEditFile) {
-			await setTimeoutPromise(300) // delay after saving file to let terminals catch up
-		}
-
-		if (busyTerminals.length > 0) {
-			// wait for terminals to cool down
-			await pWaitFor(() => busyTerminals.every((t) => !this.terminalManager.isProcessHot(t.id)), {
-				interval: 100,
-				timeout: 15_000,
-			}).catch(() => {})
-		}
-
-		this.taskState.didEditFile = false // reset, this lets us know when to wait for saved files to update terminals
-
-		// waiting for updated diagnostics lets terminal output be the most up-to-date possible
-		let terminalDetails = ""
-		if (busyTerminals.length > 0) {
-			// terminals are cool, let's retrieve their output
-			terminalDetails += "\n\n# Actively Running Terminals"
-			for (const busyTerminal of busyTerminals) {
-				terminalDetails += `\n## Original command: \`${busyTerminal.lastCommand}\``
-				const newOutput = this.terminalManager.getUnretrievedOutput(busyTerminal.id)
-				if (newOutput) {
-					terminalDetails += `\n### New Output\n${newOutput}`
-				}
-			}
-		}
-
-		// only show inactive terminals if there's output to show
-		if (inactiveTerminals.length > 0) {
-			const inactiveTerminalOutputs = new Map<number, string>()
-			for (const inactiveTerminal of inactiveTerminals) {
-				const newOutput = this.terminalManager.getUnretrievedOutput(inactiveTerminal.id)
-				if (newOutput) {
-					inactiveTerminalOutputs.set(inactiveTerminal.id, newOutput)
-				}
-			}
-			if (inactiveTerminalOutputs.size > 0) {
-				terminalDetails += "\n\n# Inactive Terminals"
-				for (const [terminalId, newOutput] of inactiveTerminalOutputs) {
-					const inactiveTerminal = inactiveTerminals.find((t) => t.id === terminalId)
-					if (inactiveTerminal) {
-						terminalDetails += `\n## ${inactiveTerminal.lastCommand}`
-						terminalDetails += `\n### New Output\n${newOutput}`
-					}
-				}
-			}
-		}
-
-		if (terminalDetails) {
-			details += terminalDetails
-		}
 
 		// Add recently modified files section
 		const recentlyModifiedFiles = this.fileContextTracker.getAndClearRecentlyModifiedFiles()

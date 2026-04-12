@@ -89,7 +89,7 @@ export function toolSpecFunctionDefinition(tool: DiracToolSpec, context: SystemP
 				paramSchema.properties = param.properties
 			}
 
-			// Preserve any additional JSON Schema fields from MCP tools
+			// Preserve any additional JSON Schema fields from tools
 			// (e.g., enum, format, minimum, maximum, etc.)
 			const reservedKeys = new Set([
 				"name",
@@ -110,9 +110,9 @@ export function toolSpecFunctionDefinition(tool: DiracToolSpec, context: SystemP
 			}
 
 			// Add usage example as part of description if available
-			// if (param.usage) {
-			// 	paramSchema.description += ` Example: ${param.usage}`
-			// }
+			if (param.usage) {
+				paramSchema.description += ` Example: ${param.usage}`
+			}
 
 			properties[param.name] = paramSchema
 		}

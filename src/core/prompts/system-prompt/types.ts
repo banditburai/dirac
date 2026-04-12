@@ -6,6 +6,7 @@ import { ApiProviderInfo } from "@/core/api"
 import type { BrowserSettings } from "@/shared/BrowserSettings"
 import type { SkillMetadata } from "@/shared/skills"
 import { DiracDefaultTool } from "@/shared/tools"
+import { ShellType } from "@/utils/shell-detection"
 import { SystemPromptSection } from "./templates/placeholders"
 
 /**
@@ -46,6 +47,9 @@ export interface SystemPromptContext {
 	readonly enableNativeToolCalls?: boolean
 	readonly enableParallelToolCalling?: boolean
 	readonly terminalExecutionMode?: "vscodeTerminal" | "backgroundExec"
+	readonly activeShellType?: ShellType
+	readonly activeShellPath?: string
+	readonly activeShellIsPosix?: boolean
 }
 
 

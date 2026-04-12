@@ -20,7 +20,8 @@ export class PromptBuilder {
 		const placeholders: Record<string, unknown> = {}
 
 		placeholders["OS"] = process.platform
-		placeholders["SHELL"] = process.env.SHELL || "bash"
+		placeholders["SHELL"] = this.context.activeShellPath || process.env.SHELL || "bash"
+		placeholders["SHELL_TYPE"] = this.context.activeShellType || "bash"
 		placeholders["HOME_DIR"] = process.env.HOME || ""
 		placeholders["CURRENT_DATE"] = new Date().toISOString().split("T")[0]
 

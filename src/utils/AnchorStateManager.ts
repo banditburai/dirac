@@ -13,7 +13,7 @@ export class AnchorStateManager {
 	private static storage = new Map<string, Map<string, TrackedDocument>>()
 	private static dictionary: string[] = []
 	private static readonly MAX_TRACKED_LINES = 50000
-	private static readonly MAX_TRACKED_FILES = 128
+	private static readonly MAX_TRACKED_FILES = 1024
 	private static readonly MAX_TRACKED_TASKS = 50
 
 	private static computeHashes(lines: string[]): Uint32Array {
