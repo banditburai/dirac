@@ -173,6 +173,7 @@ export class GeminiHandler implements ApiHandler {
 			httpOptions: this.options.geminiBaseUrl ? { baseUrl: this.options.geminiBaseUrl } : undefined,
 			systemInstruction: systemPrompt,
 			temperature: info.temperature ?? 0.5,
+			topP: 0.8,
 			...(maxOutputTokens !== undefined ? { maxOutputTokens } : {}),
 		}
 
@@ -227,6 +228,15 @@ export class GeminiHandler implements ApiHandler {
 			}
 
 		}
+
+
+		Logger.info(`Gemini: generating content with model ${modelId}`, {
+			temperature: requestConfig.temperature,
+			topP: requestConfig.topP,
+			maxOutputTokens: (requestConfig as any).maxOutputTokens,
+			thinkingConfig: requestConfig.thinkingConfig,
+			tools: requestConfig.tools?.map((t: any) => (t.functionDeclarations ? "tools" : Object.keys(t)[0])),
+		})
 
 
 		try {
