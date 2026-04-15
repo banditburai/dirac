@@ -30,6 +30,7 @@ export function setVscodeHostProviderMock(options?: {
 }) {
 	HostProvider.reset()
 	HostProvider.initialize(
+		"extension",
 		options?.webviewProviderCreator ?? ((() => {}) as DiracWebviewProviderCreator),
 		options?.diffViewProviderCreator ?? ((() => {}) as DiffViewProviderCreator),
 		options?.commentReviewControllerCreator ?? ((() => {}) as CommentReviewControllerCreator),

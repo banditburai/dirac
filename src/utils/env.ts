@@ -49,13 +49,22 @@ export async function openExternal(url: string): Promise<void> {
 		Logger.warn(`Host openExternal RPC failed, falling back to 'open' package: ${error}`)
 		try {
 			const open = (await import("open")).default
-			await open(url)
+			const cp = await open(url)
+			
+			// Handle potential errors from the child process
+			cp.on("error", (spawnError) => {
+				Logger.error(`Fallback 'open' child process error: ${spawnError}`)
+			})
 		} catch (fallbackError) {
 			Logger.error(`Fallback 'open' also failed: ${fallbackError}`)
-			HostProvider.window.showMessage({
-				type: ShowMessageType.ERROR,
-				message: `Failed to open URL: ${url}`,
-			})
+			// In CLI mode, we don't want to show a message box that might not be visible
+			// or might cause issues. The URL is already shown in the AuthView.
+			if (HostProvider.get().diracType !== "cli") {
+				HostProvider.window.showMessage({
+					type: ShowMessageType.ERROR,
+					message: `Failed to open URL: ${url}`,
+				})
+			}
 		}
 	}
 }

@@ -659,6 +659,7 @@ function setupHostProvider(context: ExtensionContext) {
 		return callbackUri.toString(true)
 	}
 	HostProvider.initialize(
+		"extension",
 		createWebview,
 		createDiffView,
 		createCommentReview,

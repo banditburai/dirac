@@ -118,6 +118,7 @@ function setupHostProvider(extensionContext: any, extensionDir: string, dataDir:
 	const getEnvironmentVariables = async (_cwd: string) => undefined
 
 	HostProvider.initialize(
+		"extension",
 		createWebview,
 		createDiffView,
 		createCommentReview,

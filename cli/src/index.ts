@@ -547,6 +547,7 @@ async function initializeCli(options: InitOptions): Promise<CliContext> {
 	)
 
 	HostProvider.initialize(
+		"cli",
 		() => new CliWebviewProvider(extensionContext as any),
 		() => new FileEditProvider(),
 		() => new CliCommentReviewController(),

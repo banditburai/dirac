@@ -19,6 +19,7 @@ import { HostBridgeClientProvider } from "./host-provider-types"
 export class HostProvider {
 	private static instance: HostProvider | null = null
 
+	diracType: "cli" | "extension"
 	createDiracWebviewProvider: DiracWebviewProviderCreator
 	createDiffViewProvider: DiffViewProviderCreator
 	createCommentReviewController: CommentReviewControllerCreator
@@ -50,6 +51,7 @@ export class HostProvider {
 
 	// Private constructor to enforce singleton pattern
 	private constructor(
+		diracType: "cli" | "extension",
 		createDiracWebviewProvider: DiracWebviewProviderCreator,
 		createDiffViewProvider: DiffViewProviderCreator,
 		createCommentReviewController: CommentReviewControllerCreator,
@@ -62,6 +64,7 @@ export class HostProvider {
 		globalStorageFsPath: string,
 		getEnvironmentVariables: GetEnvironmentVariables,
 	) {
+		this.diracType = diracType
 		this.createDiracWebviewProvider = createDiracWebviewProvider
 		this.createDiffViewProvider = createDiffViewProvider
 		this.createCommentReviewController = createCommentReviewController
@@ -76,6 +79,7 @@ export class HostProvider {
 	}
 
 	public static initialize(
+		diracType: "cli" | "extension",
 		webviewProviderCreator: DiracWebviewProviderCreator,
 		diffViewProviderCreator: DiffViewProviderCreator,
 		commentReviewControllerCreator: CommentReviewControllerCreator,
@@ -92,6 +96,7 @@ export class HostProvider {
 			throw new Error("Host provider has already been initialized.")
 		}
 		HostProvider.instance = new HostProvider(
+			diracType,
 			webviewProviderCreator,
 			diffViewProviderCreator,
 			commentReviewControllerCreator,

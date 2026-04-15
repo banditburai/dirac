@@ -250,6 +250,7 @@ export class DiracAgent implements acp.Agent {
 		)
 
 		HostProvider.initialize(
+			"cli",
 			() => new ExternalDiracWebviewProvider(this.ctx.extensionContext),
 			() => {
 				if (clientCapabilities?.fs && connection) {

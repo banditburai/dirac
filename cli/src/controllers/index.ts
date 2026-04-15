@@ -146,13 +146,20 @@ export class CliEnvServiceClient implements EnvServiceClientInterface {
 	async openExternal(request: proto.dirac.StringRequest): Promise<proto.dirac.Empty> {
 		const url = request.value || ""
 		if (url) {
-			printInfo(`🌐 Opening: ${url}`)
+			// In CLI mode, we don't want to throw if the browser fails to open.
+			// We just print a message and let the user open it manually.
 			try {
 				// Dynamically import 'open' to open URL in default browser
 				const { default: open } = await import("open")
-				await open(url)
+				const cp = await open(url)
+				
+				// Handle potential errors from the child process (e.g. spawn ENOENT)
+				// that might not be caught by the promise rejection.
+				cp.on("error", (err) => {
+					printWarning(`Could not open browser automatically: ${err.message}`)
+					printInfo("Please open the URL manually if it didn't open.")
+				})
 			} catch (error) {
-				// Log the error but don't throw, so the caller can continue (e.g. show URL for manual copy-paste)
 				printWarning(`Could not open browser automatically: ${error instanceof Error ? error.message : String(error)}`)
 				printInfo("Please open the URL manually if it didn't open.")
 			}
