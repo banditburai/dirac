@@ -27,6 +27,10 @@ const collectSystemInfo = () => {
 			cpuInfo = execSync("sysctl -n machdep.cpu.brand_string").toString().trim()
 			memoryInfo = execSync("sysctl -n hw.memsize").toString().trim()
 			memoryInfo = `${Math.round(Number.parseInt(memoryInfo) / 1e9)} GB RAM`
+		} else if (process.platform === "freebsd" || process.platform === "openbsd") {
+			cpuInfo = execSync("sysctl -n hw.model").toString().trim()
+			memoryInfo = execSync("sysctl -n hw.physmem").toString().trim()
+			memoryInfo = `${Math.round(Number.parseInt(memoryInfo) / 1e9)} GB RAM`
 		} else {
 			// Linux specific commands
 			cpuInfo = execSync("lscpu").toString().split("\n").slice(0, 5).join("\n")
@@ -86,6 +90,8 @@ const openUrl = (url) => {
 				execSync(`start "" "${url}"`)
 				break
 			case "linux":
+			case "freebsd":
+			case "openbsd":
 				execSync(`xdg-open "${url}"`)
 				break
 			default:

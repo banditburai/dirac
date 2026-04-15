@@ -165,6 +165,10 @@ export function getRipgrepInstallInstructions(): string {
 			return "apt install ripgrep  # or: yum install ripgrep"
 		case "win32":
 			return "choco install ripgrep  # or: scoop install ripgrep"
+		case "freebsd":
+			return "pkg install ripgrep"
+		case "openbsd":
+			return "pkg_add ripgrep"
 		default:
 			return "https://github.com/BurntSushi/ripgrep#installation"
 	}
