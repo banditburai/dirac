@@ -391,8 +391,7 @@ const DiracModelPicker: React.FC<DiracModelPickerProps> = ({ isPopup, currentMod
 						marginTop: 0,
 						color: "var(--vscode-descriptionForeground)",
 					}}>
-					The extension automatically fetches the latest Dirac model list. If you're unsure which model to choose, Dirac
-					works best with <strong>anthropic/claude-sonnet-4.5</strong>.
+					The extension automatically fetches the latest Dirac model list.
 				</p>
 			)}
 		</div>

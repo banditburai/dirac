@@ -3,6 +3,7 @@ import { Mode } from "@shared/ExtensionMessage"
 import { VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import Fuse from "fuse.js"
 import React, { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react"
+import { useMount } from "react-use"
 import { useSettingsStore } from "@/features/settings/store/settingsStore"
 import { highlight } from "../../history/components/HistoryView/HistoryView"
 import { ModelInfoView } from "./common/ModelInfoView"
@@ -15,7 +16,7 @@ export interface BasetenModelPickerProps {
 }
 
 const BasetenModelPicker: React.FC<BasetenModelPickerProps> = ({ isPopup, currentMode }) => {
-	const { apiConfiguration, basetenModels: dynamicBasetenModels } = useSettingsStore()
+	const { apiConfiguration, basetenModels: dynamicBasetenModels, refreshBasetenModels } = useSettingsStore()
 	const { handleModeFieldsChange } = useApiConfigurationHandlers()
 	const modeFields = getModeSpecificFields(apiConfiguration, currentMode)
 	const [searchTerm, setSearchTerm] = useState(modeFields.basetenModelId || basetenDefaultModelId)
@@ -49,8 +50,9 @@ const BasetenModelPicker: React.FC<BasetenModelPickerProps> = ({ isPopup, curren
 	}, [apiConfiguration, currentMode])
 
 	// Sync external changes when the modelId changes
-	// NOTE: Model list is refreshed automatically on mount or when the API key is set,
-	// no need to refresh here in this component again on mount.
+	useMount(() => {
+		refreshBasetenModels()
+	})
 	useEffect(() => {
 		const currentModelId = modeFields.basetenModelId || basetenDefaultModelId
 		setSearchTerm(currentModelId)
@@ -265,10 +267,6 @@ const BasetenModelPicker: React.FC<BasetenModelPickerProps> = ({ isPopup, curren
 					The extension automatically fetches the latest list of models available on{" "}
 					<VSCodeLink className="inline text-inherit" href="https://www.baseten.co/products/model-apis/">
 						Baseten.
-					</VSCodeLink>
-					If you're unsure which model to choose, Dirac works best with{" "}
-					<VSCodeLink className="inline text-inherit" onClick={() => handleModelChange("moonshotai/Kimi-K2-Instruct")}>
-						moonshotai/Kimi-K2-Instruct.
 					</VSCodeLink>
 				</p>
 			)}

@@ -3,6 +3,21 @@ import { DEFAULT_BROWSER_SETTINGS } from "@shared/BrowserSettings"
 import { Environment } from "@shared/config-types"
 import type { DiracMessage, ExtensionState } from "@shared/ExtensionMessage"
 import { DEFAULT_PLATFORM } from "@shared/ExtensionMessage"
+import {
+	basetenDefaultModelId,
+	basetenModels,
+	groqDefaultModelId,
+	groqModels,
+	openRouterDefaultModelId,
+	openRouterDefaultModelInfo,
+	requestyDefaultModelId,
+	requestyDefaultModelInfo,
+	hicapModelInfoSaneDefaults,
+	liteLlmModelInfoSaneDefaults,
+} from "@shared/api"
+import { fromProtobufModels } from "@shared/proto-conversions/models/typeConversion"
+import { EmptyRequest } from "@shared/proto/dirac/common"
+import { ModelsServiceClient } from "@/shared/api/grpc-client"
 import { create } from "zustand"
 
 interface SettingsState {
@@ -17,6 +32,10 @@ interface SettingsState {
 	refreshDiracModels: () => void
 	openRouterModels: any
 	refreshOpenRouterModels: () => void
+	refreshBasetenModels: () => void
+	refreshGroqModels: () => void
+	refreshHuggingFaceModels: () => void
+	refreshRequestyModels: () => void
 	vercelAiGatewayModels: any
 	refreshVercelAiGatewayModels: () => void
 	liteLlmModels: any
@@ -196,21 +215,90 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 	setShowWelcome: () => {},
 	availableTerminalProfiles: [],
 	hicapModels: {},
-	refreshHicapModels: () => {},
+	refreshHicapModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshHicapModels(EmptyRequest.create())
+			set({
+				hicapModels: {
+					"": hicapModelInfoSaneDefaults,
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh HiCap models:", error)
+		}
+	},
 	diracModels: {},
-	refreshDiracModels: () => {},
-	openRouterModels: {},
-	refreshOpenRouterModels: () => {},
+	refreshDiracModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshDiracModelsRpc(EmptyRequest.create())
+			set({
+				diracModels: {
+					[openRouterDefaultModelId]: openRouterDefaultModelInfo,
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh Dirac models:", error)
+		}
+	},
+	openRouterModels: {
+		[openRouterDefaultModelId]: openRouterDefaultModelInfo,
+	},
+	refreshOpenRouterModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshOpenRouterModelsRpc(EmptyRequest.create())
+			set({
+				openRouterModels: {
+					[openRouterDefaultModelId]: openRouterDefaultModelInfo,
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh OpenRouter models:", error)
+		}
+	},
 	like: {},
 	vercelAiGatewayModels: {},
-	refreshVercelAiGatewayModels: () => {},
+	refreshVercelAiGatewayModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshVercelAiGatewayModelsRpc(EmptyRequest.create())
+			set({
+				vercelAiGatewayModels: {
+					[openRouterDefaultModelId]: openRouterDefaultModelInfo,
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh Vercel AI Gateway models:", error)
+		}
+	},
 	prototype: {},
 	liteLlmModels: {},
-	refreshLiteLlmModels: () => {},
-	basetenModels: {},
-	groqModels: {},
+	refreshLiteLlmModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshLiteLlmModelsRpc(EmptyRequest.create())
+			set({
+				liteLlmModels: {
+					"": liteLlmModelInfoSaneDefaults,
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh LiteLLM models:", error)
+		}
+	},
+	basetenModels: {
+		...basetenModels,
+		[basetenDefaultModelId]: basetenModels[basetenDefaultModelId],
+	},
+	groqModels: {
+		[groqDefaultModelId]: groqModels[groqDefaultModelId],
+	},
 	huggingFaceModels: {},
-	requestyModels: {},
+	requestyModels: {
+		[requestyDefaultModelId]: requestyDefaultModelInfo,
+	},
 	openAiCodexIsAuthenticated: false,
 	openAiCodexEmail: undefined,
 
@@ -255,9 +343,57 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 	setLocalSkillsToggles: (toggles) => set({ localSkillsToggles: toggles }),
 	setRemoteRulesToggles: (toggles) => set({ remoteRulesToggles: toggles }),
 	setRemoteWorkflowToggles: (toggles) => set({ remoteWorkflowToggles: toggles }),
-	setGroqModels: () => {},
-	setHuggingFaceModels: () => {},
-	setRequestyModels: () => {},
+	setGroqModels: (models) => set({ groqModels: models }),
+	setHuggingFaceModels: (models) => set({ huggingFaceModels: models }),
+	setRequestyModels: (models) => set({ requestyModels: models }),
+	refreshBasetenModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshBasetenModelsRpc(EmptyRequest.create())
+			set({
+				basetenModels: {
+					...basetenModels,
+					[basetenDefaultModelId]: basetenModels[basetenDefaultModelId],
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh Baseten models:", error)
+		}
+	},
+	refreshGroqModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshGroqModelsRpc(EmptyRequest.create())
+			set({
+				groqModels: {
+					[groqDefaultModelId]: groqModels[groqDefaultModelId],
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh Groq models:", error)
+		}
+	},
+	refreshHuggingFaceModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshHuggingFaceModels(EmptyRequest.create())
+			set({ huggingFaceModels: fromProtobufModels(response.models) })
+		} catch (error) {
+			console.error("Failed to refresh HuggingFace models:", error)
+		}
+	},
+	refreshRequestyModels: async () => {
+		try {
+			const response = await ModelsServiceClient.refreshRequestyModels(EmptyRequest.create())
+			set({
+				requestyModels: {
+					[requestyDefaultModelId]: requestyDefaultModelInfo,
+					...fromProtobufModels(response.models),
+				},
+			})
+		} catch (error) {
+			console.error("Failed to refresh Requesty models:", error)
+		}
+	},
 	setSettings: (settings) =>
 		set((state) => {
 			return { ...state, ...settings }

@@ -9,7 +9,6 @@ import { findLastIndex } from "@shared/array"
 import { DiracApiReqInfo, Mode } from "@shared/ExtensionMessage"
 import { DiracContent, DiracStorageMessage } from "@shared/messages/content"
 import { Logger } from "@shared/services/Logger"
-import { isFrontierModel } from "@utils/model-utils"
 import { ApiConversationManagerDependencies } from "./types/api-conversation-manager"
 
 export class ApiConversationManager {
@@ -84,7 +83,7 @@ export class ApiConversationManager {
 		let shouldCompact = false
 		const useAutoCondense = this.dependencies.stateManager.getGlobalSettingsKey("useAutoCondense")
 
-		if (useAutoCondense && isFrontierModel(this.dependencies.api.getModel().id)) {
+		if (useAutoCondense) {
 			// When we initially trigger context cleanup, we increase the context window size, so we need state `currentlySummarizing`
 			// to track if we've already started the context summarization flow. After summarizing, we increment
 			// conversationHistoryDeletedRange to mask out the summarization-trigger user & assistant response messages

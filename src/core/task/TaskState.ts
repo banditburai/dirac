@@ -69,6 +69,8 @@ export class TaskState {
 
 	// Auto-context summarization
 	currentlySummarizing = false
+	totalToolCallCount = 0
+
 	lastAutoCompactTriggerIndex?: number
 	taskLockAcquired = false
 	initialCheckpointCommitPromise?: Promise<string | undefined>

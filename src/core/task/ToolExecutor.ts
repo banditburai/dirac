@@ -560,6 +560,25 @@ export class ToolExecutor {
 			// Execute the actual tool
 			toolResult = await this.coordinator.execute(config, block)
 			toolWasExecuted = true
+
+			// Increment tool call count and inject warning if needed
+			const count = ++this.taskState.totalToolCallCount
+			if (count >= 50 && (count - 50) % 25 === 0) {
+				const warning = `
+
+[SYSTEM NOTE: You have executed ${count} tool calls in this task. Please ensure you are not in an infinite loop and are making progress towards the goal. If you have completed the task, please call attempt_completion. If you are stuck, consider a different approach.]`
+				if (typeof toolResult === "string") {
+					toolResult += warning
+				} else if (Array.isArray(toolResult)) {
+					const lastBlock = toolResult[toolResult.length - 1]
+					if (lastBlock && lastBlock.type === "text") {
+						lastBlock.text += warning
+					} else {
+						toolResult.push({ type: "text", text: warning } as any)
+					}
+				}
+			}
+
 			this.pushToolResult(toolResult, block)
 
 			// Check abort before running PostToolUse hook (success path)

@@ -76,7 +76,7 @@ import { Session } from "@shared/services/Session"
 import { DiracDefaultTool } from "@shared/tools"
 import { DiracAskResponse } from "@shared/WebviewMessage"
 import { AnchorStateManager } from "@utils/AnchorStateManager"
-import { isFrontierModel, isLocalModel, isParallelToolCallingEnabled } from "@utils/model-utils"
+import { isLocalModel, isParallelToolCallingEnabled } from "@utils/model-utils"
 import fs from "fs/promises"
 import Mutex from "p-mutex"
 import pWaitFor from "p-wait-for"
@@ -219,7 +219,7 @@ export class Task {
 	// Command executor for running shell commands (extracted from executeCommandTool)
 	private commandExecutor!: CommandExecutor
 
-			constructor(params: TaskParams) {
+	constructor(params: TaskParams) {
 		const {
 			controller,
 			updateTaskHistory,
@@ -1013,7 +1013,7 @@ export class Task {
 			this.taskState.conversationHistoryDeletedRange,
 			previousApiReqIndex,
 			await ensureTaskDirectoryExists(this.taskId),
-			this.stateManager.getGlobalSettingsKey("useAutoCondense") && isFrontierModel(this.api.getModel().id),
+			this.stateManager.getGlobalSettingsKey("useAutoCondense"),
 		)
 
 		await this.writePromptMetadataArtifacts({
@@ -1029,6 +1029,26 @@ export class Task {
 			await this.messageStateHandler.saveDiracMessagesAndUpdateHistory()
 			// saves task history item which we use to keep track of conversation history deleted range
 		}
+
+		// If we're not using auto-condense, we should explicitly notify the model that history was truncated
+		const useAutoCondense = this.stateManager.getGlobalSettingsKey("useAutoCondense")
+		if (!useAutoCondense) {
+			const lastMessage = contextManagementMetadata.truncatedConversationHistory[contextManagementMetadata.truncatedConversationHistory.length - 1]
+			if (lastMessage && lastMessage.role === "user") {
+				const notice = formatResponse.contextTruncationNotice()
+				if (typeof lastMessage.content === "string") {
+					lastMessage.content += `
+
+${notice}`
+				} else if (Array.isArray(lastMessage.content)) {
+					lastMessage.content.push({
+						type: "text",
+						text: notice,
+					})
+				}
+			}
+		}
+
 
 		// Response API requires native tool calls to be enabled
 		const stream = this.api.createMessage(systemPrompt, contextManagementMetadata.truncatedConversationHistory as any, tools)
@@ -1227,7 +1247,7 @@ export class Task {
 		if (providerId && model.id) {
 			try {
 				await this.modelContextTracker.recordModelUsage(providerId, model.id, mode)
-			} catch {}
+			} catch { }
 		}
 
 		const modelInfo: DiracMessageModelInfo = {
@@ -1358,10 +1378,9 @@ export class Task {
 							type: "text",
 							text:
 								assistantMessage +
-								`\n\n[${
-									cancelReason === "streaming_failed"
-										? "Response interrupted by API Error"
-										: "Response interrupted by user"
+								`\n\n[${cancelReason === "streaming_failed"
+									? "Response interrupted by API Error"
+									: "Response interrupted by user"
 								}]`,
 						},
 					],
@@ -1743,8 +1762,8 @@ export class Task {
 
 		const { response, text, images, files } = await this.ask(
 			"mistake_limit_reached",
-				 `Tool use failure. Can potentially be mitigated with some user guidance (e.g. "Try breaking down the task into smaller steps").`
-				,
+			`Tool use failure. Can potentially be mitigated with some user guidance (e.g. "Try breaking down the task into smaller steps").`
+			,
 		)
 
 		if (response === "messageResponse") {

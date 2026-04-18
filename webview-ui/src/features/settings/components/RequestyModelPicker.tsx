@@ -1,14 +1,12 @@
-import { requestyDefaultModelId, requestyDefaultModelInfo } from "@shared/api"
+import { requestyDefaultModelId } from "@shared/api"
 import { toRequestyServiceUrl } from "@shared/clients/requesty"
 import { Mode } from "@shared/ExtensionMessage"
-import { EmptyRequest } from "@shared/proto/dirac/common"
 import { VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import Fuse from "fuse.js"
 import React, { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useMount } from "react-use"
 import styled from "styled-components"
 import { useSettingsStore } from "@/features/settings/store/settingsStore"
-import { ModelsServiceClient } from "@/shared/api/grpc-client"
 import { highlight } from "../../history/components/HistoryView/HistoryView"
 import { ModelInfoView } from "./common/ModelInfoView"
 import ThinkingBudgetSlider from "./ThinkingBudgetSlider"
@@ -22,7 +20,7 @@ export interface RequestyModelPickerProps {
 }
 
 const RequestyModelPicker: React.FC<RequestyModelPickerProps> = ({ isPopup, baseUrl, currentMode }) => {
-	const { apiConfiguration, requestyModels, setRequestyModels } = useSettingsStore()
+	const { apiConfiguration, requestyModels, refreshRequestyModels } = useSettingsStore()
 	const { handleModeFieldsChange } = useApiConfigurationHandlers()
 	const modeFields = getModeSpecificFields(apiConfiguration, currentMode)
 	const [searchTerm, setSearchTerm] = useState(modeFields.requestyModelId || requestyDefaultModelId)
@@ -63,16 +61,7 @@ const RequestyModelPicker: React.FC<RequestyModelPickerProps> = ({ isPopup, base
 	}, [apiConfiguration, currentMode])
 
 	useMount(() => {
-		ModelsServiceClient.refreshRequestyModels(EmptyRequest.create({}))
-			.then((response) => {
-				setRequestyModels({
-					[requestyDefaultModelId]: requestyDefaultModelInfo,
-					...response.models,
-				})
-			})
-			.catch((err) => {
-				console.error("Failed to refresh Requesty models:", err)
-			})
+		refreshRequestyModels()
 	})
 
 	useEffect(() => {
@@ -263,12 +252,6 @@ const RequestyModelPicker: React.FC<RequestyModelPickerProps> = ({ isPopup, base
 						The extension automatically fetches the latest list of models available on{" "}
 						<VSCodeLink href={requestyModelListUrl?.toString()} style={{ display: "inline", fontSize: "inherit" }}>
 							Requesty.
-						</VSCodeLink>
-						If you're unsure which model to choose, Dirac works best with{" "}
-						<VSCodeLink
-							onClick={() => handleModelChange("anthropic/claude-3-7-sonnet-latest")}
-							style={{ display: "inline", fontSize: "inherit" }}>
-							anthropic/claude-3-7-sonnet-latest.
 						</VSCodeLink>
 					</>
 				</p>

@@ -17,7 +17,6 @@ import { HostRegistryInfo } from "@/registry"
 import { DiracError, DiracErrorType } from "@/services/error"
 import { ApiFormat } from "@/shared/proto/dirac/models"
 import { calculateApiCostAnthropic } from "@/utils/cost"
-import { isFrontierModel } from "@/utils/model-utils"
 import { TaskState } from "../../TaskState"
 import { ToolExecutorCoordinator } from "../ToolExecutorCoordinator"
 import { ToolValidator } from "../ToolValidator"
@@ -939,7 +938,7 @@ ${partialResult}`
 	): boolean {
 		const { contextWindow, maxAllowedSize } = getContextWindowInfo(api)
 		const useAutoCondense = this.baseConfig.services.stateManager.getGlobalSettingsKey("useAutoCondense")
-		if (useAutoCondense && isFrontierModel(modelId)) {
+		if (useAutoCondense) {
 			const autoCondenseThreshold = 0.75
 			const roundedThreshold = autoCondenseThreshold ? Math.floor(contextWindow * autoCondenseThreshold) : maxAllowedSize
 			const thresholdTokens = Math.min(roundedThreshold, maxAllowedSize)

@@ -1,13 +1,10 @@
 import { groqDefaultModelId, groqModels } from "@shared/api"
 import { Mode } from "@shared/ExtensionMessage"
-import { EmptyRequest } from "@shared/proto/dirac/common"
-import { fromProtobufModels } from "@shared/proto-conversions/models/typeConversion"
 import { VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import Fuse from "fuse.js"
 import React, { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useMount } from "react-use"
 import { useSettingsStore } from "@/features/settings/store/settingsStore"
-import { ModelsServiceClient } from "@/shared/api/grpc-client"
 import { highlight } from "../../history/components/HistoryView/HistoryView"
 import { ModelInfoView } from "./common/ModelInfoView"
 import { getModeSpecificFields, normalizeApiConfiguration } from "./utils/providerUtils"
@@ -19,7 +16,7 @@ export interface GroqModelPickerProps {
 }
 
 const GroqModelPicker: React.FC<GroqModelPickerProps> = ({ isPopup, currentMode }) => {
-	const { apiConfiguration, groqModels: dynamicGroqModels, setGroqModels } = useSettingsStore()
+	const { apiConfiguration, groqModels: dynamicGroqModels, refreshGroqModels } = useSettingsStore()
 	const { handleModeFieldsChange } = useApiConfigurationHandlers()
 	const modeFields = getModeSpecificFields(apiConfiguration, currentMode)
 	const [searchTerm, setSearchTerm] = useState(modeFields.groqModelId || groqDefaultModelId)
@@ -53,16 +50,7 @@ const GroqModelPicker: React.FC<GroqModelPickerProps> = ({ isPopup, currentMode 
 	}, [apiConfiguration, currentMode])
 
 	useMount(() => {
-		ModelsServiceClient.refreshGroqModelsRpc(EmptyRequest.create({}))
-			.then((response) => {
-				setGroqModels({
-					[groqDefaultModelId]: groqModels[groqDefaultModelId],
-					...fromProtobufModels(response.models),
-				})
-			})
-			.catch((err) => {
-				console.error("Failed to refresh Groq models:", err)
-			})
+		refreshGroqModels()
 	})
 
 	// Sync external changes when the modelId changes
@@ -262,10 +250,6 @@ const GroqModelPicker: React.FC<GroqModelPickerProps> = ({ isPopup, currentMode 
 					The extension automatically fetches the latest list of models available on{" "}
 					<VSCodeLink className="inline text-inherit" href="https://console.groq.com/docs/models">
 						Groq.
-					</VSCodeLink>
-					If you're unsure which model to choose, Dirac works best with{" "}
-					<VSCodeLink className="inline text-inherit" onClick={() => handleModelChange("llama-3.3-70b-versatile")}>
-						llama-3.3-70b-versatile.
 					</VSCodeLink>
 				</p>
 			)}

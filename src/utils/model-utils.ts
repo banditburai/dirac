@@ -170,22 +170,6 @@ export function isDeepSeekNative(id: string): boolean {
 	return modelId.includes("deepseek-chat") || modelId.includes("deepseek-reasoner")
 }
 
-export function isFrontierModel(id: string): boolean {
-	const modelId = normalize(id)
-	return (
-		isClaude4Plus(modelId) ||
-		isGemini2dot5(modelId) ||
-		isGrok4(modelId) ||
-		isGPT5(modelId) ||
-		isGptOss(modelId) ||
-		isMinimax(modelId) ||
-		isGemini3(modelId) ||
-		isNextGenOpenSource(modelId) ||
-		isDeepSeek32(modelId) ||
-		isDeepSeekNative(modelId)
-	)
-}
-
 export function isLocalModel(providerInfo: ApiProviderInfo): boolean {
 	const localProviders = ["lmstudio", "ollama"]
 	return localProviders.includes(normalize(providerInfo.providerId))
@@ -223,7 +207,7 @@ export function isNativeToolCallingConfig(providerInfo: ApiProviderInfo, enableN
 		return false
 	}
 	const modelId = providerInfo.model.id.toLowerCase()
-	return isFrontierModel(modelId)
+	return true
 }
 
 /**
