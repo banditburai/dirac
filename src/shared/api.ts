@@ -1114,9 +1114,11 @@ export const deepSeekModels = {
 		supportsImages: false,
 		supportsPromptCache: true, 
 		supportsReasoning: true,
-		inputPrice: 0.14,
+		supportsReasoningEffort: true,
+		supportsTools: true,
+		inputPrice: 0,
 		outputPrice: 0.28,
-		cacheWritesPrice: 0.0,
+		cacheWritesPrice: 0.14,
 		cacheReadsPrice: 0.028,
 	},
 	"deepseek-v4-pro": {
@@ -1125,9 +1127,11 @@ export const deepSeekModels = {
 		supportsImages: false,
 		supportsPromptCache: true, 
 		supportsReasoning: true,
-		inputPrice: 1.74,
+		supportsReasoningEffort: true,
+		supportsTools: true,
+		inputPrice: 0,
 		outputPrice: 3.48,
-		cacheWritesPrice: 0.0,
+		cacheWritesPrice: 1.74,
 		cacheReadsPrice: 0.145,
 	},
 	"deepseek-chat": {
@@ -1144,13 +1148,15 @@ export const deepSeekModels = {
 		maxTokens: 8_000,
 		contextWindow: 128_000,
 		supportsImages: false,
-		supportsPromptCache: true, // supports context caching, but not in the way anthropic does it (deepseek reports input tokens and reads/writes in the same usage report) FIXME: we need to show users cache stats how deepseek does it
-		inputPrice: 0, // technically there is no input price, it's all either a cache hit or miss (ApiOptions will not show this)
+		supportsPromptCache: true,
+		supportsReasoning: true,
+		supportsTools: true,
+		inputPrice: 0,
 		outputPrice: 2.19,
 		cacheWritesPrice: 0.55,
 		cacheReadsPrice: 0.14,
 	},
-} as const satisfies Record<string, ModelInfo>
+} as const satisfies Record<string, OpenAiCompatibleModelInfo>
 
 // Hugging Face Inference Providers
 // https://huggingface.co/docs/inference-providers/en/index

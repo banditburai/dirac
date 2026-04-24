@@ -29,7 +29,7 @@ export const GeminiProvider = ({ showModelOptions, isPopup, currentMode }: Gemin
 
 	// Get the normalized configuration
 	const { selectedModelId, selectedModelInfo } = normalizeApiConfiguration(apiConfiguration, currentMode)
-	const showReasoningEffort = supportsReasoningEffortForModelId(selectedModelId)
+	const showReasoningEffort = supportsReasoningEffortForModelId(selectedModelId, selectedModelInfo)
 
 	return (
 		<div>

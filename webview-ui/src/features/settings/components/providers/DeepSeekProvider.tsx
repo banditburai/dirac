@@ -1,10 +1,11 @@
 import { deepSeekModels } from "@shared/api"
 import { Mode } from "@shared/ExtensionMessage"
-import { normalizeApiConfiguration } from "@/features/settings/components/utils/providerUtils"
+import { getModeSpecificFields, normalizeApiConfiguration, supportsReasoningEffortForModelId } from "@/features/settings/components/utils/providerUtils"
 import { useSettingsStore } from "@/features/settings/store/settingsStore"
 import { ApiKeyField } from "../common/ApiKeyField"
 import { ModelInfoView } from "../common/ModelInfoView"
 import { ModelSelector } from "../common/ModelSelector"
+import ReasoningEffortSelector from "../ReasoningEffortSelector"
 import { useApiConfigurationHandlers } from "../utils/useApiConfigurationHandlers"
 
 /**
@@ -21,6 +22,7 @@ interface DeepSeekProviderProps {
  */
 export const DeepSeekProvider = ({ showModelOptions, isPopup, currentMode }: DeepSeekProviderProps) => {
 	const { apiConfiguration } = useSettingsStore()
+	const modeFields = getModeSpecificFields(apiConfiguration, currentMode)
 	const { handleFieldChange, handleModeFieldChange } = useApiConfigurationHandlers()
 
 	// Get the normalized configuration
@@ -49,6 +51,10 @@ export const DeepSeekProvider = ({ showModelOptions, isPopup, currentMode }: Dee
 						}
 						selectedModelId={selectedModelId}
 					/>
+
+					{supportsReasoningEffortForModelId(selectedModelId, selectedModelInfo) && (
+						<ReasoningEffortSelector currentMode={currentMode} />
+					)}
 
 					<ModelInfoView isPopup={isPopup} modelInfo={selectedModelInfo} selectedModelId={selectedModelId} />
 				</>

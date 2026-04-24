@@ -73,7 +73,10 @@ import {
 import { Mode } from "@shared/ExtensionMessage";
 import * as reasoningSupport from "@shared/utils/reasoning-support";
 
-export function supportsReasoningEffortForModelId(modelId?: string, _allowShortOpenAiIds = false): boolean {
+export function supportsReasoningEffortForModelId(modelId?: string, modelInfo?: ModelInfo): boolean {
+	if ((modelInfo as any)?.supportsReasoningEffort) {
+		return true
+	}
 	return reasoningSupport.supportsReasoningEffortForModel(modelId)
 }
 

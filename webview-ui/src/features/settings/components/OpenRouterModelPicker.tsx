@@ -202,7 +202,7 @@ const OpenRouterModelPicker: React.FC<OpenRouterModelPickerProps> = ({ isPopup, 
 	}, [selectedIndex])
 
 	const selectedModelIdLower = selectedModelId?.toLowerCase() || ""
-	const showReasoningEffort = useMemo(() => supportsReasoningEffortForModelId(selectedModelId), [selectedModelId])
+	const showReasoningEffort = useMemo(() => supportsReasoningEffortForModelId(selectedModelId, selectedModelInfo), [selectedModelId, selectedModelInfo])
 
 	const showBudgetSlider = useMemo(() => {
 		if (showReasoningEffort) {

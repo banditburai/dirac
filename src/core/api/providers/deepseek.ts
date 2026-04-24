@@ -9,11 +9,13 @@ import { ApiHandler, CommonApiHandlerOptions } from "../"
 import { withRetry } from "../retry"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { addReasoningContent } from "../transform/r1-format"
+import { normalizeOpenaiReasoningEffort } from "@shared/storage/types"
 import { ApiStream } from "../transform/stream"
 import { getOpenAIToolParams, ToolCallProcessor } from "../transform/tool-call-processor"
 
 interface DeepSeekHandlerOptions extends CommonApiHandlerOptions {
 	deepSeekApiKey?: string
+	reasoningEffort?: string
 	apiModelId?: string
 }
 
@@ -47,6 +49,8 @@ export class DeepSeekHandler implements ApiHandler {
 	private async *yieldUsage(info: ModelInfo, usage: OpenAI.Completions.CompletionUsage | undefined): ApiStream {
 		// Deepseek reports total input AND cache reads/writes,
 		// see context caching: https://api-docs.deepseek.com/guides/kv_cache)
+		// DeepSeek reports prompt_tokens as the sum of prompt_cache_hit_tokens and prompt_cache_miss_tokens.
+		// We yield the total input tokens to ensure correct cost calculation and UI display.
 		// where the input tokens is the sum of the cache hits/misses, just like OpenAI.
 		// This affects:
 		// 1) context management truncation algorithm, and
@@ -65,10 +69,9 @@ export class DeepSeekHandler implements ApiHandler {
 		const cacheReadTokens = deepUsage?.prompt_cache_hit_tokens || 0
 		const cacheWriteTokens = deepUsage?.prompt_cache_miss_tokens || 0
 		const totalCost = calculateApiCostOpenAI(info, inputTokens, outputTokens, cacheWriteTokens, cacheReadTokens)
-		const nonCachedInputTokens = Math.max(0, inputTokens - cacheReadTokens - cacheWriteTokens) // this will always be 0
 		yield {
 			type: "usage",
-			inputTokens: nonCachedInputTokens,
+			inputTokens: inputTokens,
 			outputTokens: outputTokens,
 			cacheWriteTokens: cacheWriteTokens,
 			cacheReadTokens: cacheReadTokens,
@@ -81,10 +84,15 @@ export class DeepSeekHandler implements ApiHandler {
 		const client = this.ensureClient()
 		const model = this.getModel()
 
-		const isDeepseekReasoner = model.id.includes("deepseek-reasoner")
-
+		const isR1 = model.id.includes("reasoner") || model.id.includes("r1")
+		const supportsReasoning = model.info.supportsReasoning
+		const requestedEffort = normalizeOpenaiReasoningEffort(this.options.reasoningEffort)
+		const isThinkingEnabled = supportsReasoning && requestedEffort !== "none"
+		const useReasoningFormat = isR1 || isThinkingEnabled
+		const shouldAddReasoningContent = isR1 || supportsReasoning
 		const convertedMessages = convertToOpenAiMessages(messages)
-		const openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = isDeepseekReasoner
+
+		const openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = shouldAddReasoningContent
 			? [{ role: "system", content: systemPrompt }, ...addReasoningContent(convertedMessages, messages)]
 			: [{ role: "system", content: systemPrompt }, ...convertedMessages]
 
@@ -94,8 +102,14 @@ export class DeepSeekHandler implements ApiHandler {
 			messages: openAiMessages,
 			stream: true,
 			stream_options: { include_usage: true },
-			// Only set temperature for non-reasoner models
-			...(model.id === "deepseek-reasoner" ? {} : { temperature: 0 }),
+			...(supportsReasoning && !isR1
+				? {
+						// @ts-ignore
+						extra_body: { thinking: { type: isThinkingEnabled ? "enabled" : "disabled" } },
+						...(isThinkingEnabled ? { reasoning_effort: requestedEffort } : {}),
+					}
+				: {}),
+			...(useReasoningFormat ? {} : { temperature: 0 }),
 			...getOpenAIToolParams(tools),
 		})
 

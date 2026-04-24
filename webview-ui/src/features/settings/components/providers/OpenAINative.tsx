@@ -26,7 +26,7 @@ export const OpenAINativeProvider = ({ showModelOptions, isPopup, currentMode }:
 
 	// Get the normalized configuration
 	const { selectedModelId, selectedModelInfo } = normalizeApiConfiguration(apiConfiguration, currentMode)
-	const showReasoningEffort = supportsReasoningEffortForModelId(selectedModelId, true)
+	const showReasoningEffort = supportsReasoningEffortForModelId(selectedModelId, selectedModelInfo)
 
 	return (
 		<div>

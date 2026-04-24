@@ -1,13 +1,11 @@
 import { xaiModels } from "@shared/api"
 import { Mode } from "@shared/ExtensionMessage"
-import { VSCodeCheckbox, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
-import { useState } from "react"
-import { getModeSpecificFields, normalizeApiConfiguration } from "@/features/settings/components/utils/providerUtils"
+import { getModeSpecificFields, normalizeApiConfiguration, supportsReasoningEffortForModelId } from "@/features/settings/components/utils/providerUtils"
 import { useSettingsStore } from "@/features/settings/store/settingsStore"
-import { DROPDOWN_Z_INDEX } from "../ApiOptions"
+import ReasoningEffortSelector from "../ReasoningEffortSelector"
 import { ApiKeyField } from "../common/ApiKeyField"
 import { ModelInfoView } from "../common/ModelInfoView"
-import { DropdownContainer, ModelSelector } from "../common/ModelSelector"
+import { ModelSelector } from "../common/ModelSelector"
 import { useApiConfigurationHandlers } from "../utils/useApiConfigurationHandlers"
 
 /**
@@ -29,7 +27,6 @@ export const XaiProvider = ({ showModelOptions, isPopup, currentMode }: XaiProvi
 	const { selectedModelId, selectedModelInfo } = normalizeApiConfiguration(apiConfiguration, currentMode)
 
 	// Local state for reasoning effort toggle
-	const [reasoningEffortSelected, setReasoningEffortSelected] = useState(!!modeFields.reasoningEffort)
 
 	return (
 		<div>
@@ -68,58 +65,8 @@ export const XaiProvider = ({ showModelOptions, isPopup, currentMode }: XaiProvi
 						selectedModelId={selectedModelId}
 					/>
 
-					{selectedModelId && selectedModelId.includes("3-mini") && (
-						<>
-							<VSCodeCheckbox
-								checked={reasoningEffortSelected}
-								onChange={(e: any) => {
-									const isChecked = e.target.checked === true
-									setReasoningEffortSelected(isChecked)
-									if (!isChecked) {
-										handleModeFieldChange(
-											{ plan: "planModeReasoningEffort", act: "actModeReasoningEffort" },
-											"",
-											currentMode,
-										)
-									}
-								}}
-								style={{ marginTop: 0 }}>
-								Modify reasoning effort
-							</VSCodeCheckbox>
-
-							{reasoningEffortSelected && (
-								<div>
-									<label htmlFor="reasoning-effort-dropdown">
-										<span style={{}}>Reasoning Effort</span>
-									</label>
-									<DropdownContainer className="dropdown-container" zIndex={DROPDOWN_Z_INDEX - 100}>
-										<VSCodeDropdown
-											id="reasoning-effort-dropdown"
-											onChange={(e: any) => {
-												handleModeFieldChange(
-													{ plan: "planModeReasoningEffort", act: "actModeReasoningEffort" },
-													e.target.value,
-													currentMode,
-												)
-											}}
-											style={{ width: "100%", marginTop: 3 }}
-											value={modeFields.reasoningEffort || "high"}>
-											<VSCodeOption value="low">low</VSCodeOption>
-											<VSCodeOption value="high">high</VSCodeOption>
-										</VSCodeDropdown>
-									</DropdownContainer>
-									<p
-										style={{
-											fontSize: "12px",
-											marginTop: 3,
-											marginBottom: 0,
-											color: "var(--vscode-descriptionForeground)",
-										}}>
-										High effort may produce more thorough analysis but takes longer and uses more tokens.
-									</p>
-								</div>
-							)}
-						</>
+					{supportsReasoningEffortForModelId(selectedModelId, selectedModelInfo) && (
+						<ReasoningEffortSelector currentMode={currentMode} />
 					)}
 
 					<ModelInfoView isPopup={isPopup} modelInfo={selectedModelInfo} selectedModelId={selectedModelId} />

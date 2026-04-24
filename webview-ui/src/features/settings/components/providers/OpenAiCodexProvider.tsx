@@ -46,7 +46,7 @@ export const OpenAiCodexProvider = ({ showModelOptions, isPopup, currentMode }: 
 	const { handleModeFieldChange } = useApiConfigurationHandlers()
 
 	const { selectedModelId, selectedModelInfo } = normalizeApiConfiguration(apiConfiguration, currentMode)
-	const showReasoningEffort = supportsReasoningEffortForModelId(selectedModelId, true)
+	const showReasoningEffort = supportsReasoningEffortForModelId(selectedModelId, selectedModelInfo)
 
 	return (
 		<div>

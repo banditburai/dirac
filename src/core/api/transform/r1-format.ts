@@ -57,7 +57,7 @@ export function addReasoningContent(
 				const hasToolCalls = !!(msg as any).tool_calls?.length
 				// Add reasoning_content if it's the current turn OR if the message would otherwise be empty
 				// (to avoid 400 errors from providers like Moonshot/DeepSeek)
-				if (i >= lastUserIndex || (isContentEmpty && !hasToolCalls)) {
+				if (i >= lastUserIndex || hasToolCalls || isContentEmpty) {
 					return { ...msg, reasoning_content: thinking }
 				}
 			}
