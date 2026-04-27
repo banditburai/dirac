@@ -207,12 +207,13 @@ export class GeminiHandler implements ApiHandler {
 		let stopReason: string | undefined
 
 		const isNativeToolCallsEnabled = tools?.length
-		if (isNativeToolCallsEnabled || this.options.geminiSearchEnabled) {
+		const isSearchEnabled = this.options.geminiSearchEnabled && !this.options.isVertex
+		if (isNativeToolCallsEnabled || isSearchEnabled) {
 			requestConfig.tools = []
 			if (isNativeToolCallsEnabled) {
 				requestConfig.tools.push({ functionDeclarations: tools })
 			}
-			if (this.options.geminiSearchEnabled) {
+			if (isSearchEnabled) {
 				requestConfig.tools.push({ googleSearch: {} } as any)
 			}
 
@@ -222,10 +223,9 @@ export class GeminiHandler implements ApiHandler {
 					mode: FunctionCallingConfigMode.ANY,
 				}
 			}
-			if (this.options.geminiSearchEnabled) {
+			if (isSearchEnabled) {
 				;(requestConfig.toolConfig as any).includeServerSideToolInvocations = true
 			}
-
 		}
 
 

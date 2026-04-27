@@ -133,7 +133,6 @@ function createHandlerForProvider(
 				geminiBaseUrl: options.geminiBaseUrl,
 				reasoningEffort: mode === "plan" ? options.planModeReasoningEffort : options.actModeReasoningEffort,
 				ulid: options.ulid,
-				geminiSearchEnabled: options.geminiSearchEnabled,
 
 			})
 		case "openai": {

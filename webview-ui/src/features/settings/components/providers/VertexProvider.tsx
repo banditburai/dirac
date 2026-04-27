@@ -148,25 +148,6 @@ export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: Verte
 						<ReasoningEffortSelector currentMode={currentMode} />
 					)}
 
-					{isGeminiModel && (
-						<>
-							<div className="flex items-center gap-2 mt-2">
-								<VSCodeCheckbox
-									checked={apiConfiguration?.geminiSearchEnabled || false}
-									onChange={(e: any) => handleFieldChange("geminiSearchEnabled", e.target.checked)}>
-									<span style={{ fontWeight: 500 }}>Grounding with Google Search</span>
-								</VSCodeCheckbox>
-							</div>
-							<p
-								style={{
-									fontSize: "12px",
-									marginTop: "5px",
-									color: "var(--vscode-descriptionForeground)",
-								}}>
-								Connects the Gemini model to real-time web content. Each search query is billed separately.
-							</p>
-						</>
-					)}
 
 					<ModelInfoView isPopup={isPopup} modelInfo={selectedModelInfo} selectedModelId={selectedModelId} />
 				</>
