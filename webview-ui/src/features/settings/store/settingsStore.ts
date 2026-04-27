@@ -45,6 +45,9 @@ interface SettingsState {
 	groqModels: any
 	huggingFaceModels: any
 	requestyModels: any
+	githubCopilotModels: any
+	githubCopilotIsAuthenticated: boolean
+	githubCopilotEmail?: string
 	openAiCodexIsAuthenticated: boolean
 	openAiCodexEmail?: string
 	autoApprovalSettings: ExtensionState["autoApprovalSettings"]
@@ -300,6 +303,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 	requestyModels: {
 		[requestyDefaultModelId]: requestyDefaultModelInfo,
 	},
+	githubCopilotModels: {},
+	githubCopilotIsAuthenticated: false,
+	githubCopilotEmail: undefined,
 	openAiCodexIsAuthenticated: false,
 	openAiCodexEmail: undefined,
 

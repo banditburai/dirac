@@ -274,4 +274,6 @@ service UiService {
 
   // Opens the Dirac walkthrough
   rpc openWalkthrough(EmptyRequest) returns (Empty);
+  // Initiates GitHub Copilot login flow
+  rpc githubCopilotLogin(EmptyRequest) returns (Empty);
 }

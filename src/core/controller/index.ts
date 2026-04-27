@@ -32,6 +32,7 @@ import { getAxiosSettings } from "@/shared/net"
 import { Logger } from "@/shared/services/Logger"
 import { Session } from "@/shared/services/Session"
 import { getLatestAnnouncementId } from "@/utils/announcements"
+import { ShowMessageType } from "@shared/proto/host/window"
 import { getCwd, getDesktopDir } from "@/utils/path"
 import { PromptRegistry } from "../prompts/system-prompt"
 import { ensureCacheDirectoryExists, GlobalFileNames } from "../storage/disk"
@@ -42,6 +43,7 @@ import { getDiracOnboardingModels } from "./models/getDiracOnboardingModels"
 import { appendDiracStealthModels } from "./models/refreshOpenRouterModels"
 import { checkCliInstallation } from "./state/checkCliInstallation"
 import { sendStateUpdate } from "./state/subscribeToState"
+import { githubCopilotAuthManager } from "@/integrations/github-copilot/auth"
 import { sendChatButtonClickedEvent } from "./ui/subscribeToChatButtonClicked"
 import { SkillMetadata } from "@/shared/skills"
 
@@ -436,6 +438,48 @@ export class Controller {
 		// Dont send settingsButtonClicked because its bad ux if user is on welcome
 	}
 
+	// GitHub Copilot
+	async handleGithubCopilotLogin() {
+		try {
+			const data = await githubCopilotAuthManager.initiateDeviceFlow()
+			// We need to show this to the user. Since we don't have a specific UI for this yet,
+			// we'll use a VS Code information message with a button to open the URL.
+			// The user will then have to enter the code.
+			// Actually, a better way is to show a dialog in the webview.
+			// But for now, let's use the VS Code API.
+			const openUrl = "Open GitHub"
+			const response = await HostProvider.window.showMessage({
+				type: ShowMessageType.INFORMATION,
+				message: `GitHub Copilot: Enter code ${data.user_code} at ${data.verification_uri}`,
+			})
+			// Note: showInformationMessage in HostProvider might not support buttons yet.
+			// I'll check HostProvider.window.showInformationMessage.
+
+			// Open the URL automatically
+			await open(data.verification_uri)
+
+			// Start polling in background
+			githubCopilotAuthManager
+				.pollForToken(data.device_code, data.interval)
+				.then(async () => {
+					await this.postStateToWebview()
+					HostProvider.window.showMessage({
+						type: ShowMessageType.INFORMATION,
+						message: "Successfully authenticated with GitHub Copilot!",
+					})
+				})
+				.catch((error) => {
+					Logger.error("GitHub Copilot auth polling failed:", error)
+				})
+		} catch (error) {
+			Logger.error("GitHub Copilot login failed:", error)
+			HostProvider.window.showMessage({
+				type: ShowMessageType.ERROR,
+				message: `GitHub Copilot login failed: ${error instanceof Error ? error.message : String(error)}`,
+			})
+		}
+	}
+
 	// Requesty
 
 	async handleRequestyCallback(code: string) {
@@ -637,6 +681,11 @@ export class Controller {
 		const openAiCodexIsAuthenticated = await openAiCodexOAuthManager.isAuthenticated()
 		const openAiCodexEmail = (await openAiCodexOAuthManager.getEmail()) ?? undefined
 
+		// Check GitHub Copilot authentication status
+		const githubCopilotIsAuthenticated = await githubCopilotAuthManager.isAuthenticated()
+		const githubCopilotEmail = (await githubCopilotAuthManager.getEmail()) ?? undefined
+		const githubCopilotModels = this.stateManager.getModelsCache("github-copilot") ?? undefined
+
 		return {
 			version,
 			apiConfiguration,
@@ -712,6 +761,9 @@ export class Controller {
 			welcomeBanners,
 			openAiCodexIsAuthenticated,
 			openAiCodexEmail,
+			githubCopilotIsAuthenticated,
+			githubCopilotEmail,
+			githubCopilotModels,
 			availableSkills,
 		}
 	}

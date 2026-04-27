@@ -9,6 +9,7 @@ import { refreshGroqModels } from "../models/refreshGroqModels"
 import { refreshHicapModels } from "../models/refreshHicapModels"
 import { refreshLiteLlmModels } from "../models/refreshLiteLlmModels"
 import { refreshOpenRouterModels } from "../models/refreshOpenRouterModels"
+import { refreshGithubCopilotModels } from "../models/refreshGithubCopilotModels"
 import { sendOpenRouterModelsEvent } from "../models/subscribeToOpenRouterModels"
 
 /**
@@ -145,6 +146,42 @@ export async function initializeWebview(controller: Controller, _request: EmptyR
 
 					// Post state update if we updated any model info
 					if ((planModelId && models[planModelId]) || (actModelId && models[actModelId])) {
+						await controller.postStateToWebview()
+					}
+				}
+			}
+		})
+
+		refreshGithubCopilotModels().then(async (models) => {
+			if (models && Object.keys(models).length > 0) {
+				const apiConfiguration = controller.stateManager.getApiConfiguration()
+				const planActSeparateModelsSetting = controller.stateManager.getGlobalSettingsKey("planActSeparateModelsSetting")
+				const currentMode = controller.stateManager.getGlobalSettingsKey("mode")
+
+				if (planActSeparateModelsSetting) {
+					const modelIdField = currentMode === "plan" ? "planModeGithubCopilotModelId" : "actModeGithubCopilotModelId"
+					const modelInfoField =
+						currentMode === "plan" ? "planModeGithubCopilotModelInfo" : "actModeGithubCopilotModelInfo"
+					const modelId = apiConfiguration[modelIdField]
+
+					if (modelId && models[modelId]) {
+						controller.stateManager.setGlobalState(modelInfoField, models[modelId])
+						await controller.postStateToWebview()
+					}
+				} else {
+					const planModelId = apiConfiguration.planModeGithubCopilotModelId
+					const actModelId = apiConfiguration.actModeGithubCopilotModelId
+					const updates: Partial<GlobalStateAndSettings> = {}
+
+					if (planModelId && models[planModelId]) {
+						updates.planModeGithubCopilotModelInfo = models[planModelId]
+					}
+					if (actModelId && models[actModelId]) {
+						updates.actModeGithubCopilotModelInfo = models[actModelId]
+					}
+
+					if (Object.keys(updates).length > 0) {
+						controller.stateManager.setGlobalStateBatch(updates)
 						await controller.postStateToWebview()
 					}
 				}

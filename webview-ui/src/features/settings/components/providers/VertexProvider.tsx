@@ -1,7 +1,7 @@
 import { vertexGlobalModels, vertexModels } from "@shared/api"
 import type { Mode } from "@shared/ExtensionMessage"
 import VertexData from "@shared/providers/vertex.json"
-import { VSCodeCheckbox, VSCodeDropdown, VSCodeLink, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeDropdown, VSCodeLink, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 
 import { normalizeApiConfiguration } from "@/features/settings/components/utils/providerUtils"
 import { useSettingsStore } from "@/features/settings/store/settingsStore"

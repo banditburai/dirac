@@ -3,7 +3,7 @@ import { fetch } from "@/shared/net"
 import { Logger } from "@/shared/services/Logger"
 import { z } from "zod"
 
-const CLIENT_ID = "Ov23li8tweQw6odWQebz"
+const CLIENT_ID = "Iv1.b507a08c87ecfe98"
 const GITHUB_DEVICE_CODE_URL = "https://github.com/login/device/code"
 const GITHUB_ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token"
 const OAUTH_POLLING_SAFETY_MARGIN_MS = 3000
@@ -55,6 +55,7 @@ export class GithubCopilotAuthManager {
 		}
 		return this.credentials?.email || null
 	}
+
 	async getAccessToken(): Promise<string | null> {
 		if (!this.credentials) {
 			await this.loadCredentials()

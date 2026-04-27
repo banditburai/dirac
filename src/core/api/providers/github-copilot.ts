@@ -6,51 +6,14 @@ import { ApiStream } from "../transform/stream"
 import { githubCopilotAuthManager } from "@/integrations/github-copilot/auth"
 import { fetch } from "@/shared/net"
 import { convertToOpenAiMessages } from "../transform/openai-format"
+import {
+	GITHUB_COPILOT_BASE_URL,
+	getCopilotToken,
+	fetchCopilotModels,
+	COPILOT_SPOOF_HEADERS,
+	githubCopilotModelSchema,
+} from "@/integrations/github-copilot/api"
 import { z } from "zod"
-
-const GITHUB_COPILOT_BASE_URL = "https://api.githubcopilot.com"
-
-const githubCopilotModelSchema = z.object({
-	data: z.array(
-		z.object({
-			model_picker_enabled: z.boolean(),
-			id: z.string(),
-			name: z.string(),
-			version: z.string(),
-			supported_endpoints: z.array(z.string()).optional(),
-			policy: z
-				.object({
-					state: z.string().optional(),
-				})
-				.optional(),
-			capabilities: z.object({
-				family: z.string(),
-				limits: z.object({
-					max_context_window_tokens: z.number(),
-					max_output_tokens: z.number(),
-					max_prompt_tokens: z.number(),
-					vision: z
-						.object({
-							max_prompt_image_size: z.number(),
-							max_prompt_images: z.number(),
-							supported_media_types: z.array(z.string()),
-						})
-						.optional(),
-				}),
-				supports: z.object({
-					adaptive_thinking: z.boolean().optional(),
-					max_thinking_budget: z.number().optional(),
-					min_thinking_budget: z.number().optional(),
-					reasoning_effort: z.array(z.string()).optional(),
-					streaming: z.boolean(),
-					structured_outputs: z.boolean().optional(),
-					tool_calls: z.boolean(),
-					vision: z.boolean().optional(),
-				}),
-			}),
-		}),
-	),
-})
 
 export class GithubCopilotHandler implements ApiHandler {
 	private options: CommonApiHandlerOptions
@@ -62,14 +25,16 @@ export class GithubCopilotHandler implements ApiHandler {
 	}
 
 	async *createMessage(systemPrompt: string, messages: DiracStorageMessage[]): ApiStream {
-		const token = await githubCopilotAuthManager.getAccessToken()
-		if (!token) {
+		const githubToken = await githubCopilotAuthManager.getAccessToken()
+		if (!githubToken) {
 			throw new Error("Not authenticated with GitHub Copilot. Please sign in.")
 		}
 
+		const token = await getCopilotToken(githubToken)
+
 		let modelData: z.infer<typeof githubCopilotModelSchema>["data"][0] | undefined
 		try {
-			const models = await this.fetchModels(token)
+			const models = await fetchCopilotModels(token)
 			modelData = models.find((m) => m.id === this.modelId)
 		} catch (error) {
 			Logger.error("[github-copilot] Failed to fetch models:", error)
@@ -77,14 +42,14 @@ export class GithubCopilotHandler implements ApiHandler {
 
 		// Fallback to defaults if model discovery fails
 		const isAnthropicFormat = modelData?.supported_endpoints?.includes("/v1/messages") ?? false
-		const url = isAnthropicFormat ? `${GITHUB_COPILOT_BASE_URL}/v1/messages` : `${GITHUB_COPILOT_BASE_URL}/v1/chat/completions`
+		const url = isAnthropicFormat
+			? `${GITHUB_COPILOT_BASE_URL}/v1/messages`
+			: `${GITHUB_COPILOT_BASE_URL}/chat/completions`
 
 		const headers: Record<string, string> = {
 			Authorization: `Bearer ${token}`,
 			"Content-Type": "application/json",
-			"x-initiator": "user",
-			"Openai-Intent": "conversation-edits",
-			"User-Agent": "Dirac-CLI/1.0.0",
+			...COPILOT_SPOOF_HEADERS,
 		}
 
 		let body: any
@@ -121,19 +86,6 @@ export class GithubCopilotHandler implements ApiHandler {
 		}
 
 		yield* this.handleStream(response.body, isAnthropicFormat)
-	}
-
-	private async fetchModels(token: string) {
-		const response = await fetch(`${GITHUB_COPILOT_BASE_URL}/models`, {
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		})
-		if (!response.ok) {
-			throw new Error(`Failed to fetch models: ${response.statusText}`)
-		}
-		const data = await response.json()
-		return githubCopilotModelSchema.parse(data).data
 	}
 
 	private async *handleStream(body: ReadableStream<Uint8Array>, isAnthropicFormat: boolean): ApiStream {

@@ -87,6 +87,7 @@ export class StateManager {
 		aihubmixModels: { data: Record<string, ModelInfo>; timestamp: number } | null
 		liteLlmModels: { data: Record<string, ModelInfo>; timestamp: number } | null
 		vercelModels: { data: Record<string, ModelInfo>; timestamp: number } | null
+		githubCopilotModels: { data: Record<string, ModelInfo>; timestamp: number } | null
 	} = {
 		diracModels: null,
 		openRouterModels: null,
@@ -98,6 +99,7 @@ export class StateManager {
 		hicapModels: null,
 		aihubmixModels: null,
 		liteLlmModels: null,
+		githubCopilotModels: null,
 		vercelModels: null,
 	}
 
@@ -404,7 +406,8 @@ export class StateManager {
 			| "hicap"
 			| "aihubmix"
 			| "liteLlm"
-			| "vercel",
+			| "vercel"
+			| "github-copilot",
 		models: Record<string, ModelInfo>,
 	): void {
 		const cacheKey = `${provider}Models` as keyof typeof this.modelInfoCache
@@ -423,7 +426,8 @@ export class StateManager {
 			| "hicap"
 			| "aihubmix"
 			| "liteLlm"
-			| "vercel",
+			| "vercel"
+			| "github-copilot",
 	): Record<string, ModelInfo> | null {
 		const cacheKey = `${provider}Models` as keyof typeof this.modelInfoCache
 		const cached = this.modelInfoCache[cacheKey]

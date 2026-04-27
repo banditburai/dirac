@@ -7,6 +7,7 @@ import { Box, Text } from "ink"
 import Spinner from "ink-spinner"
 import React, { useEffect, useMemo, useState } from "react"
 import { refreshOpenRouterModels } from "@/core/controller/models/refreshOpenRouterModels"
+import { refreshGithubCopilotModels } from "@/core/controller/models/refreshGithubCopilotModels"
 import {
 	type ApiProvider,
 	anthropicDefaultModelId,
@@ -111,7 +112,7 @@ export function hasStaticModels(provider: string): boolean {
 }
 
 export function hasModelPicker(provider: string): boolean {
-	return hasStaticModels(provider) || usesOpenRouterModels(provider)
+	return hasStaticModels(provider) || usesOpenRouterModels(provider) || provider === "github-copilot"
 }
 
 export function getDefaultModelId(provider: string): string {
@@ -152,10 +153,21 @@ export const ModelPicker: React.FC<ModelPickerProps> = ({ provider, controller, 
 					setIsLoading(false)
 				})
 		}
+
+		if (provider === "github-copilot") {
+			setIsLoading(true)
+			refreshGithubCopilotModels()
+				.then((models) => {
+					setAsyncModels(Object.keys(models).sort((a, b) => a.localeCompare(b)))
+				})
+				.finally(() => {
+					setIsLoading(false)
+				})
+		}
 	}, [provider, controller])
 
 	const modelList = useMemo(() => {
-		if (usesOpenRouterModels(provider)) {
+		if (usesOpenRouterModels(provider) || provider === "github-copilot") {
 			return asyncModels
 		}
 		return getModelList(provider)
@@ -197,7 +209,7 @@ export const ModelPicker: React.FC<ModelPickerProps> = ({ provider, controller, 
 	}
 
 	// If async fetch returned no models, render nothing
-	if (usesOpenRouterModels(provider) && modelList.length === 0) {
+	if ((usesOpenRouterModels(provider) || provider === "github-copilot") && modelList.length === 0) {
 		return null
 	}
 

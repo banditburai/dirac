@@ -109,6 +109,10 @@ export interface ExtensionState {
 	welcomeBanners?: BannerCardData[]
 	openAiCodexIsAuthenticated?: boolean
 	openAiCodexEmail?: string
+	githubCopilotIsAuthenticated?: boolean
+	githubCopilotEmail?: string
+	githubCopilotModels?: Record<string, any>
+
 }
 
 export interface DiracMessage {
